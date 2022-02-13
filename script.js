@@ -3,11 +3,20 @@ const { exec } = require("child_process");
 var cf = require('cloudflare')({
     token: process.env.cloudflare_token
   });
+const yaml = require('js-yaml')
+const fs = require('fs');
 
 //Functions Declarements
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+//Var Declarements
+let fileContents = fs.readFileSync('./config.yml', 'utf8');
+let data = yaml.load(fileContents);
+
+let zone_id = data.zone_id
+let id = data.id
 
 async function keepDNS(ip,dns_record){
     while (true){
@@ -17,12 +26,12 @@ async function keepDNS(ip,dns_record){
                 
                 if(check_ip != ip){
                     dns_record.content = check_ip
-                    cf.dnsRecords.edit("f4b17898e218d4eaf3db27dbf33fbda1","c1272f01f119c1ac1844061bf30f3a05",dns_record)
+                    cf.dnsRecords.edit(zone_id,id,dns_record)
                     console.log(`LOG : DNS dramaquiz.fr record changed for ${check_ip}`)
                     ip = check_ip
                 }
                 else{
-                    console.log(`check IP : ${check_ip} | saved IP : ${ip}`) 
+                    //console.log(`check IP : ${check_ip} | saved IP : ${ip}`) 
                 }
             }
             else{
@@ -35,6 +44,6 @@ async function keepDNS(ip,dns_record){
 
 exec("curl 'https://api.ipify.org?format=json%27'", async (error, stdout, stderr) => {
     var ip = stdout
-    var dns_record = await cf.dnsRecords.read('f4b17898e218d4eaf3db27dbf33fbda1','c1272f01f119c1ac1844061bf30f3a05')
+    var dns_record = await cf.dnsRecords.read(zone_id,id)
     keepDNS(ip,dns_record.result)
 })
