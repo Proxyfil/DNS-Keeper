@@ -5,6 +5,7 @@ var cf = require('cloudflare')({
   });
 const yaml = require('js-yaml')
 const fs = require('fs');
+const { exit } = require("process");
 
 //Functions Declarements
 function sleep(ms) {
@@ -17,6 +18,26 @@ let data = yaml.load(fileContents);
 
 let zone_id = data.zone_id
 let id = data.id
+
+if(zone_id == ""){
+    console.log("ERROR : No zone-id specified")
+    exit()
+}
+else if(id == ""){
+    console.log("LOGS : No id detected, giving to you all the dns records from your zone-id")
+    cf.dnsRecords.browse(zone_id).then(async data => {
+        data.result.forEach(dns_data => {
+            console.log(dns_data.name + " | " + dns_data.id)
+        });
+    })
+}
+else{
+    exec("curl 'https://api.ipify.org?format=json%27'", async (error, stdout, stderr) => {
+        var ip = stdout
+        var dns_record = await cf.dnsRecords.read(zone_id,id)
+        keepDNS(ip,dns_record.result)
+    })
+}
 
 async function keepDNS(ip,dns_record){
     while (true){
@@ -41,9 +62,3 @@ async function keepDNS(ip,dns_record){
         await sleep(60 * 1000);
     }
 }
-
-exec("curl 'https://api.ipify.org?format=json%27'", async (error, stdout, stderr) => {
-    var ip = stdout
-    var dns_record = await cf.dnsRecords.read(zone_id,id)
-    keepDNS(ip,dns_record.result)
-})
