@@ -11,3 +11,4 @@ NodeJS Script to keep Cloudflare DNS Updated
  - **"node script.js"** to start
  - Should be kept in screen or sub-process running
  - 1 Minute delay
+ - Set zone_id as **""** in config to get the list of your dns records
